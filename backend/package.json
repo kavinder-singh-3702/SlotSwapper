@@ -1,5 +1,5 @@
 {
-  "name": "slotswapper",
+  "name": "@slotswapper/backend",
   "version": "1.0.0",
   "description": "SlotSwapper backend with authentication and swap logic",
   "main": "src/server.js",

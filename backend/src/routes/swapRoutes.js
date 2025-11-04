@@ -3,6 +3,7 @@ import { authenticate } from '../middleware/authMiddleware.js';
 import {
   createSwapRequest,
   getSwappableSlots,
+  listSwapRequests,
   respondToSwapRequest
 } from '../controllers/swapController.js';
 
@@ -10,6 +11,7 @@ const router = Router();
 
 router.use(authenticate);
 router.get('/swappable-slots', getSwappableSlots);
+router.get('/swap-requests', listSwapRequests);
 router.post('/swap-request', createSwapRequest);
 router.post('/swap-response/:requestId', respondToSwapRequest);
 

@@ -22,6 +22,40 @@ export const getSwappableSlots = async (req, res, next) => {
 };
 
 /**
+ * List swap requests where the authenticated user is either the requester or responder.
+ * Populating references keeps the frontend lean by delivering all metadata in one round trip.
+ */
+export const listSwapRequests = async (req, res, next) => {
+  try {
+    const populateConfig = [
+      { path: 'requester', select: 'name email' },
+      { path: 'responder', select: 'name email' },
+      {
+        path: 'requesterSlot',
+        populate: { path: 'owner', select: 'name email' }
+      },
+      {
+        path: 'responderSlot',
+        populate: { path: 'owner', select: 'name email' }
+      }
+    ];
+
+    const [incoming, outgoing] = await Promise.all([
+      SwapRequest.find({ responder: req.user.id })
+        .populate(populateConfig)
+        .sort({ createdAt: -1 }),
+      SwapRequest.find({ requester: req.user.id })
+        .populate(populateConfig)
+        .sort({ createdAt: -1 })
+    ]);
+
+    res.json({ incoming, outgoing });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Create a swap request by validating that both events are swappable.
  */
 export const createSwapRequest = async (req, res, next) => {
