@@ -1,0 +1,11 @@
+export const EVENT_STATUS = Object.freeze({
+  BUSY: 'BUSY',
+  SWAPPABLE: 'SWAPPABLE',
+  SWAP_PENDING: 'SWAP_PENDING'
+});
+
+export const SWAP_REQUEST_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
+});
