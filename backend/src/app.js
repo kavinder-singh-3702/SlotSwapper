@@ -2,9 +2,9 @@ import express from 'express';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
-import authRoutes from './routes/authRoutes.js';
-import eventRoutes from './routes/eventRoutes.js';
-import swapRoutes from './routes/swapRoutes.js';
+import authRoutes from './modules/auth/auth.routes.js';
+import eventRoutes from './modules/events/event.routes.js';
+import swapRoutes from './modules/swaps/swap.routes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 
 const app = express();

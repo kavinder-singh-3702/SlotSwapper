@@ -1,9 +1,11 @@
 # SlotSwapper Monorepo
 
-SlotSwapper now ships as a full-stack workspace containing:
+SlotSwapper now ships as a full-stack workspace containing decoupled backend and frontend apps that can scale independently while sharing a unified domain model.
 
-- **`backend/`** – the existing Node.js + Express API that manages authentication, events, and swap flows.
-- **`frontend/`** – a brand new Next.js (TypeScript) application that delivers a dynamic marketplace UI with authenticated routes.
+## Repository Layout
+
+- **`backend/`** – Node.js + Express API split into feature modules (`src/modules`) backed by shared middleware, models, and utilities.
+- **`frontend/`** – Next.js (TypeScript) client organised under `src/` with feature slices (`features/`), shared providers, and a lightweight `lib/` layer for cross-cutting helpers.
 
 Both apps are deployable independently, but they are wired to work together out of the box.
 
@@ -37,13 +39,12 @@ Set `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local` to point to the backend 
 - **Notifications** – review incoming offers with accept/reject actions and track the status of your outgoing requests.
 - **Protected routes** – the App Router uses a dedicated layout to guard authenticated areas and keep the navigation consistent.
 
-## Backend Adjustments
+## Backend Notes
 
-The backend codebase is untouched functionally except for:
+- Feature-specific HTTP logic now lives under `src/modules/{auth,events,swaps}` with matching services for reusable business rules.
+- Shared infrastructure (database config, middleware, constants, models, utilities) remains at `src/` and is consumed by the modules.
+- Existing endpoints and behaviours are unchanged; new structure simply improves separation of concerns.
 
-- Being moved into the `backend/` directory for clearer separation.
-- A new `GET /api/swap-requests` endpoint that returns both incoming and outgoing swap requests with populated references for the UI.
-
-Refer to `backend/README.md` for detailed API documentation.
+Refer to `backend/README.md` for detailed API documentation and module breakdown.
 
 Happy swapping!

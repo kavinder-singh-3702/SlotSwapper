@@ -77,16 +77,24 @@ All protected endpoints require an `Authorization: Bearer <token>` header. Acqui
 src/
 ├── app.js                # Express app wiring
 ├── server.js             # Entry point & database bootstrap
-├── config/
-│   └── database.js       # MongoDB connection helper
-├── constants/
-│   └── eventStatus.js    # Enumerations for event & swap statuses
-├── controllers/          # Route handlers (auth, events, swaps)
+├── config/               # Database helpers and environment setup
+├── constants/            # Enumerations for events and swap flows
 ├── middleware/           # Auth & error handling middleware
 ├── models/               # Mongoose schemas
-├── routes/               # Express routers
-└── utils/
-    └── jwt.js            # JWT helper utilities
+├── modules/              # Feature slices (auth, events, swaps)
+│   ├── auth/
+│   │   ├── auth.controller.js
+│   │   ├── auth.routes.js
+│   │   └── auth.service.js
+│   ├── events/
+│   │   ├── event.controller.js
+│   │   ├── event.routes.js
+│   │   └── event.service.js
+│   └── swaps/
+│       ├── swap.controller.js
+│       ├── swap.routes.js
+│       └── swap.service.js
+└── utils/                # Shared utilities (JWT helpers, etc.)
 ```
 
 ## Development Notes
