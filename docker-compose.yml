@@ -1,0 +1,25 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: slotswapper-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+  backend:
+    build:
+      context: ./backend
+    container_name: slotswapper-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGODB_URI=mongodb://mongo:27017/slotswapper
+      - JWT_SECRET=localdevsecret
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongo
+volumes:
+  mongo-data:
