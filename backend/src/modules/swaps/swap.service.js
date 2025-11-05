@@ -2,6 +2,34 @@ import mongoose from '../../config/database.js';
 import Event from '../../models/Event.js';
 import SwapRequest from '../../models/SwapRequest.js';
 import { EVENT_STATUS, SWAP_REQUEST_STATUS } from '../../constants/eventStatus.js';
+import { emitToUser } from '../../config/socket.js';
+
+const swapRequestPopulateConfig = [
+  { path: 'requester', select: 'name email' },
+  { path: 'responder', select: 'name email' },
+  {
+    path: 'requesterSlot',
+    populate: { path: 'owner', select: 'name email' }
+  },
+  {
+    path: 'responderSlot',
+    populate: { path: 'owner', select: 'name email' }
+  }
+];
+
+const SWAP_SOCKET_EVENTS = {
+  REQUEST_RECEIVED: 'swap:request-received',
+  REQUEST_ACCEPTED: 'swap:request-accepted'
+};
+
+const populateSwapRequest = async (swapRequest) => {
+  if (!swapRequest) {
+    return swapRequest;
+  }
+
+  await swapRequest.populate(swapRequestPopulateConfig);
+  return swapRequest;
+};
 
 export const findSwappableSlots = async (userId) => {
   return Event.find({
@@ -13,22 +41,9 @@ export const findSwappableSlots = async (userId) => {
 };
 
 export const listSwapRequestsForUser = async (userId) => {
-  const populateConfig = [
-    { path: 'requester', select: 'name email' },
-    { path: 'responder', select: 'name email' },
-    {
-      path: 'requesterSlot',
-      populate: { path: 'owner', select: 'name email' }
-    },
-    {
-      path: 'responderSlot',
-      populate: { path: 'owner', select: 'name email' }
-    }
-  ];
-
   const [incoming, outgoing] = await Promise.all([
-    SwapRequest.find({ responder: userId }).populate(populateConfig).sort({ createdAt: -1 }),
-    SwapRequest.find({ requester: userId }).populate(populateConfig).sort({ createdAt: -1 })
+    SwapRequest.find({ responder: userId }).populate(swapRequestPopulateConfig).sort({ createdAt: -1 }),
+    SwapRequest.find({ requester: userId }).populate(swapRequestPopulateConfig).sort({ createdAt: -1 })
   ]);
 
   return { incoming, outgoing };
@@ -104,12 +119,20 @@ export const createSwapRequestForUser = async (userId, { mySlotId, theirSlotId }
       throw error;
     }
 
-    return SwapRequest.create({
+    const swapRequest = await SwapRequest.create({
       requester: userId,
       responder: theirSlotLocked.owner,
       requesterSlot: mySlotId,
       responderSlot: theirSlotId
     });
+
+    await populateSwapRequest(swapRequest);
+
+    emitToUser(theirSlotLocked.owner, SWAP_SOCKET_EVENTS.REQUEST_RECEIVED, {
+      swapRequest
+    });
+
+    return swapRequest;
   } catch (error) {
     try {
       if (mySlotLocked) {
@@ -131,26 +154,40 @@ export const respondToSwapRequestForUser = async (userId, requestId, accepted) =
   const context = { requestId, accepted, userId };
 
   let session;
+  let result;
   try {
     session = await mongoose.startSession();
 
-    let responseMessage;
     await session.withTransaction(async () => {
-      responseMessage = await processSwapResponse(context, session);
+      result = await processSwapResponse(context, session);
     });
-
-    return responseMessage;
   } catch (error) {
     if (isTransactionUnsupported(error)) {
-      return processSwapResponse(context);
+      result = await processSwapResponse(context);
+    } else {
+      throw error;
     }
-
-    throw error;
   } finally {
     if (session) {
       session.endSession();
     }
   }
+
+  if (result?.swapRequest) {
+    await populateSwapRequest(result.swapRequest);
+
+    if (result.swapRequest.status === SWAP_REQUEST_STATUS.ACCEPTED) {
+      const requesterId =
+        result.swapRequest.requester?._id ?? result.swapRequest.requester;
+
+      emitToUser(requesterId, SWAP_SOCKET_EVENTS.REQUEST_ACCEPTED, {
+        message: result.message,
+        swapRequest: result.swapRequest
+      });
+    }
+  }
+
+  return result;
 };
 
 const processSwapResponse = async ({ requestId, accepted, userId }, session) => {
@@ -198,7 +235,10 @@ const processSwapResponse = async ({ requestId, accepted, userId }, session) => 
       saveWithSession(responderSlot)
     ]);
 
-    return 'Swap request rejected.';
+    return {
+      message: 'Swap request rejected.',
+      swapRequest
+    };
   }
 
   const originalRequester = requesterSlot.owner;
@@ -214,7 +254,10 @@ const processSwapResponse = async ({ requestId, accepted, userId }, session) => 
     saveWithSession(swapRequest)
   ]);
 
-  return 'Swap request accepted. Slots have been exchanged.';
+  return {
+    message: 'Swap request accepted. Slots have been exchanged.',
+    swapRequest
+  };
 };
 
 const isTransactionUnsupported = (error) =>

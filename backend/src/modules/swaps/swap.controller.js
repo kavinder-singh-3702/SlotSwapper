@@ -52,8 +52,8 @@ export const respondToSwapRequest = async (req, res, next) => {
   }
 
   try {
-    const message = await respondToSwapRequestForUser(req.user.id, req.params.requestId, accepted);
-    res.json({ message });
+    const result = await respondToSwapRequestForUser(req.user.id, req.params.requestId, accepted);
+    res.json(result);
   } catch (error) {
     handleServiceError(error, res, next);
   }
