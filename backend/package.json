@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
+    "build": "node -e \"console.log('No build step required for the backend API')\"",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "lint": "eslint ."
