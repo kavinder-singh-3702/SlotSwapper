@@ -112,4 +112,24 @@ src/
 4. With user B's token, accept or reject via `POST /api/swap-response/:requestId`.
 5. Verify slot ownership and statuses with `GET /api/events` for each user.
 
+## Docker Support
+
+You can spin up the API and a local MongoDB instance with Docker:
+
+```bash
+docker compose up --build
+```
+
+This uses the included `backend/Dockerfile` and `docker-compose.yml`, runs the API with `npm run dev`, and exposes the backend on `http://localhost:4000`. Environment variables are defined in the compose file; override them as needed or create a `backend/.env` derived from `.env.example`.
+
+## Deploying to Render
+
+When deploying the monorepo to Render, be sure to:
+
+1. Set the **Root Directory** of the service to `backend`.
+2. Use a build command similar to `npm install && npm run build`.
+3. Keep the start command as `npm start`.
+
+This ensures dependencies like `dotenv` are installed before the server boots.
+
 Happy swapping!

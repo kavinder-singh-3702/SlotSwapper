@@ -6,10 +6,9 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm ci
 
-COPY src ./src
-COPY .env.example ./
+COPY . .
 
 ENV NODE_ENV=production \
     PORT=4000

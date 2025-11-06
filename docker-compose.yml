@@ -7,19 +7,28 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
   backend:
     build:
       context: ./backend
     container_name: slotswapper-backend
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - PORT=4000
-      - MONGODB_URI=mongodb://mongo:27017/slotswapper
-      - JWT_SECRET=localdevsecret
+      NODE_ENV: development
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:27017/slotswapper
+      JWT_SECRET: localdevsecret
+      CLIENT_ORIGIN: http://localhost:3000
+    command: npm run dev
     ports:
       - "4000:4000"
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
 volumes:
   mongo-data:
